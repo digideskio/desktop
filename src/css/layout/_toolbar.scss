@@ -1,0 +1,57 @@
+.toolbar {
+	@include size(100% auto);
+	@include display(flex);
+	@include flex-direction(row);
+	@include justify-content(space-between);
+	@include align-items(center);
+
+	.item {
+		@include size(em(100) em(64));
+		@include flex(0 0 em(100));
+		background-size: 25%;
+		background-repeat: no-repeat;
+		background-position: center;
+		line-height: 4em;
+
+		&:not(.title) {
+			opacity: .4;
+			cursor: pointer;			
+		}
+
+		&.movies {
+			background-image: url('../images/icon-movie.svg');
+		}
+
+		&.series {
+			background-size: 40%;
+			background-image: url('../images/icon-tv.svg');
+		}
+
+		&.search {
+			@include align-self(flex-end);
+			margin-left: auto;
+			background-size: 40%;
+			background-position: center 1em;
+			background-image: url('../images/icon-search.svg');
+		}
+
+		&.back {
+			background-image: url('../images/icon-back.svg');
+		}
+
+		&.title {
+			@include flex-grow(1);
+		}
+
+		&.active {
+			opacity: 1;
+			background-color: rgba(black, .25);
+			box-shadow: inset 0 -3px 0 $hotred;
+		}
+
+		&:hover {
+			opacity: .8;
+			background-color: rgba(black, .1);
+		}
+	}
+}
