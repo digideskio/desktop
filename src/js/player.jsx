@@ -91,13 +91,9 @@ var Player = React.createClass({
           _self.player.on('fullscreenchange', function() {
             if (!_self.state.fullscreen) {
               window.resizeTo(screen.width, screen.height);
-              _self.player.dimension('width', screen.width);
-              _self.player.dimension('height', screen.height);
               _self.setState({fullscreen: true});
             } else {
               window.resizeTo(800, 500);
-              _self.player.dimension('width', 800);
-              _self.player.dimension('height', 478);
               _self.setState({fullscreen: false});
             }
           });
