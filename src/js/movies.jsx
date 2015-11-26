@@ -7,30 +7,49 @@ const electron = require('electron');
 const remote = electron.remote;
 const BrowserWindow = remote.BrowserWindow;
 
-const Loading = require('../build/js/loading');
+const Loading = require('../build/js/Loading');
+const MoviesList = require('../build/js/MoviesList');
 
-var Movies = React.createClass({
+var PopcornTime = React.createClass({
   getInitialState: function() {
     return {
       selected: null,
-      movies: null
+      movies: {
+        list: [],
+        page: 0,
+        loading: false
+      },
+      moviesPage: 0
     };
   },
   componentDidMount: function() {
+    this.loadMoreMovies();
+  },
+  loadMoreMovies: function() {
+    var movies = this.state.movies;
+    movies.loading = true;
+    this.setState({movies: movies});
+    var page = this.state.movies.page + 1;
+
     superagent
       .get('https://yts.ag/api/v2/list_movies.json')
+      .query({
+        sort_by: 'download_count',
+        page: page
+      })
       .set('Accept', 'application/json')
       .end(function(err, res){
         if (res.body.status == 'ok') {
-          this.setState({movies: res.body.data.movies});
+          var movies = {list: this.state.movies.list.concat(res.body.data.movies), page: page, loading: false};
+          this.setState({movies: movies});
         }
       }.bind(this));
   },
-  selectMovie: function(index, event) {
+  selectMovie: function(index) {
     this.resizeWindow(config.film_window.w, config.film_window.h);
     this.setState({selected: index});
 
-    var movie = this.state.movies[index];
+    var movie = this.state.movies.list[index];
     if (!movie.plot) {
       this.loadPlot(index);
     }
@@ -47,20 +66,20 @@ var Movies = React.createClass({
   },
   loadPlot: function(index) {
     var movies = this.state.movies;
-    var movie = movies[index];
+    var movie = movies.list[index];
 
     MovieDB.movieInfo({id: movie.imdb_code }, function(err, res){
       if (res) {
         movie.plot = res.overview;
         movie.backdrop_image = 'https://image.tmdb.org/t/p/original/' + res.backdrop_path;
-        movies[index] = movie;
+        movies.list[index] = movie;
         this.setState({movies: movies});
       }
     }.bind(this));
   },
   loadSubtitles: function(index) {
     var movies = this.state.movies;
-    var movie = movies[index];
+    var movie = movies.list[index];
 
     var OpenSubtitles = new OS({
       useragent:'Popcorn Time v2',
@@ -72,17 +91,17 @@ var Movies = React.createClass({
       imdbid: movie.imdb_code
     }).then(function(subtitles) {
       movie.subtitles = subtitles;
-      movies[index] = movie;
+      movies.list[index] = movie;
       this.setState({movies: movies});
     }.bind(this));
   },
   render: function() {
     var Content;
-    if (!this.state.movies) {
+    if (!this.state.movies.list.length) {
       Content = <div><Loading /></div>;
     } else {
       if (this.state.selected) {
-        var movie = this.state.movies[this.state.selected];
+        var movie = this.state.movies.list[this.state.selected];
         Content = <Movie movie={movie} unselectMovie={this.unselectMovie} />;
       } else {
         Content = (
@@ -95,7 +114,7 @@ var Movies = React.createClass({
               <div className="item search"></div>
             </div>
 
-            <MoviesList movies={this.state.movies} selectMovie={this.selectMovie} />
+            <MoviesList movies={this.state.movies.list} selectMovie={this.selectMovie} loadMoreMovies={this.loadMoreMovies} loadingMore={this.state.movies.loading} />
           </div>
         );
       }
@@ -103,49 +122,6 @@ var Movies = React.createClass({
     return (
       <div>{Content}</div>
     );
-  }
-});
-
-var MoviesList = React.createClass({
-  getInitialState: function() {
-    return {
-      loadingMore: false
-    };
-  },
-  componentDidMount: function() {
-    var moviesList = this.refs.moviesList;
-    moviesList.addEventListener('scroll', this.handleScroll);
-  },
-  componentWillUnmount: function() {
-    var moviesList = this.refs.moviesList;
-    moviesList.removeEventListener('scroll', this.handleScroll);
-  },
-  handleScroll: function() {
-    var moviesList = this.refs.moviesList;
-    var sh = moviesList.scrollWidth;
-    var st = moviesList.scrollLeft;
-    var oh = moviesList.offsetWidth;
-
-    if (!this.state.loadingMore && st + oh >= sh - 100) { //Less than 100px from right
-      this.setState({loadingMore: true});
-      alert("ending!!");
-    }
-  },
-  render: function() {
-    var _self = this;
-    var selectMovie = this.props.selectMovie;
-    return (
-      <div ref="moviesList" className="list scrollable">
-      {this.props.movies.map(function(movie, i) {
-        return (
-          <div className="item" key={i} onClick={selectMovie.bind(_self, i)}>
-            <img className="cover" src={movie.medium_cover_image} title={movie.title} />
-          </div>
-        );
-      })}
-        <Loading />
-      </div>
-    )
   }
 });
 
@@ -329,6 +305,6 @@ var SubtitlesScene = React.createClass({
 });
 
 ReactDOM.render(
-  <Movies />,
+  <PopcornTime />,
   document.getElementById('container')
 );
