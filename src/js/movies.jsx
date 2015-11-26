@@ -7,6 +7,8 @@ const electron = require('electron');
 const remote = electron.remote;
 const BrowserWindow = remote.BrowserWindow;
 
+const Loading = require('../build/js/loading');
+
 var Movies = React.createClass({
   getInitialState: function() {
     return {
@@ -77,13 +79,12 @@ var Movies = React.createClass({
   render: function() {
     var Content;
     if (!this.state.movies) {
-      Content = <div>Loading...</div>;
+      Content = <div><Loading /></div>;
     } else {
       if (this.state.selected) {
         var movie = this.state.movies[this.state.selected];
         Content = <Movie movie={movie} unselectMovie={this.unselectMovie} />;
       } else {
-        var _self = this;
         Content = (
           <div>
 
@@ -94,15 +95,7 @@ var Movies = React.createClass({
               <div className="item search"></div>
             </div>
 
-            <div className="list">
-            {this.state.movies.map(function(movie, i) {
-              return (
-                <div className="item" key={i} onClick={_self.selectMovie.bind(_self, i)}>
-                  <img className="cover" src={movie.medium_cover_image} title={movie.title} />
-                </div>
-              );
-            })}
-            </div>
+            <MoviesList movies={this.state.movies} selectMovie={this.selectMovie} />
           </div>
         );
       }
@@ -110,6 +103,49 @@ var Movies = React.createClass({
     return (
       <div>{Content}</div>
     );
+  }
+});
+
+var MoviesList = React.createClass({
+  getInitialState: function() {
+    return {
+      loadingMore: false
+    };
+  },
+  componentDidMount: function() {
+    var moviesList = this.refs.moviesList;
+    moviesList.addEventListener('scroll', this.handleScroll);
+  },
+  componentWillUnmount: function() {
+    var moviesList = this.refs.moviesList;
+    moviesList.removeEventListener('scroll', this.handleScroll);
+  },
+  handleScroll: function() {
+    var moviesList = this.refs.moviesList;
+    var sh = moviesList.scrollWidth;
+    var st = moviesList.scrollLeft;
+    var oh = moviesList.offsetWidth;
+
+    if (!this.state.loadingMore && st + oh >= sh - 100) { //Less than 100px from right
+      this.setState({loadingMore: true});
+      alert("ending!!");
+    }
+  },
+  render: function() {
+    var _self = this;
+    var selectMovie = this.props.selectMovie;
+    return (
+      <div ref="moviesList" className="list scrollable">
+      {this.props.movies.map(function(movie, i) {
+        return (
+          <div className="item" key={i} onClick={selectMovie.bind(_self, i)}>
+            <img className="cover" src={movie.medium_cover_image} title={movie.title} />
+          </div>
+        );
+      })}
+        <Loading />
+      </div>
+    )
   }
 });
 

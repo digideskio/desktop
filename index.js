@@ -6,7 +6,7 @@ const BrowserWindow = electron.BrowserWindow;
 
 //Prevents dock icon to display
 if (process.platform == 'darwin') {
-  app.dock.hide();
+  //app.dock.hide();
 }
 
 //Prevents multiples instances of the program
@@ -32,7 +32,7 @@ app.on('ready', function() {
     autoHideMenuBar: true
   });
   MainWindow.loadURL('file://' + __dirname + '/views/main.html');
-  //MainWindow.webContents.openDevTools();
+  MainWindow.webContents.openDevTools();
   //Hide the main window when blured
   MainWindow.on('blur', function() {
     this.hide();
