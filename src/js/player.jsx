@@ -20,6 +20,8 @@ var Player = React.createClass({
   getInitialState: function() {
     return {
       downloaded: 0,
+      per: 0,
+      fullscreen: false,
       params: null,
       playing: false,
       subtitles: {
@@ -81,10 +83,24 @@ var Player = React.createClass({
       });
 
       setInterval(function () {
-        _self.setState({ downloaded: engine.swarm.downloaded });
+        var per = Math.round(engine.swarm.downloaded * 100 / BUFFERING_SIZE);
+        _self.setState({ downloaded: engine.swarm.downloaded, per: per });
         if (_self.state.downloaded > BUFFERING_SIZE && !_self.state.playing) {
           _self.setState({playing: true});
           _self.player = videojs('player', { "autoplay": true });
+          _self.player.on('fullscreenchange', function() {
+            if (!_self.state.fullscreen) {
+              window.resizeTo(screen.width, screen.height);
+              _self.player.dimension('width', screen.width);
+              _self.player.dimension('height', screen.height);
+              _self.setState({fullscreen: true});
+            } else {
+              window.resizeTo(800, 500);
+              _self.player.dimension('width', 800);
+              _self.player.dimension('height', 478);
+              _self.setState({fullscreen: false});
+            }
+          });
         }
       }, 3000);
     });
@@ -92,7 +108,16 @@ var Player = React.createClass({
   render: function() {
     var Content;
     if (!this.state.playing) {
-      Content = <div>Buffering: {this.state.downloaded} / </div>;
+      var progress_style = {
+        width: this.state.per + '%'
+      };
+      Content = (
+        <div className="buffering">
+          <div className="percentile">{this.state.per}%</div>
+          <div className="progress"><div style={progress_style}></div></div>
+          <div className="description">Buffering...</div>
+        </div>
+      );
     } else {
       var Subtitle;
       var subtitles = this.state.subtitles;
@@ -100,7 +125,7 @@ var Player = React.createClass({
         Subtitle = <track label={subtitles.selected.langName} kind="subtitles" srcLang={subtitles.selected.lang} src={subtitles.source} default />;
       }
       Content = (
-        <video id="player" className="video-js" controls preload="auto" width="800" height="500" data-setup="{}">
+        <video id="player" className="video-js" controls preload="auto" width="800" height="478"  data-setup="{}">
           <source src={this.src} type="video/mp4" />
           {Subtitle}
         </video>

@@ -1,0 +1,26 @@
+.buffering {
+  @include justify-content(center)
+  text-align: center;
+
+  .percentile {
+    font-size: 32px;
+  }
+
+  .progress {
+    height: 20px;
+    background-color: #202020;
+    width: 60%;
+    margin: 25px auto 15px;
+    border-radius: 10px;
+
+    div {
+      height: 18px;
+      background-color: #5f7d8c;
+      border-radius: 10px;
+    }
+  }
+
+  .description {
+    color: #777;
+  }
+}

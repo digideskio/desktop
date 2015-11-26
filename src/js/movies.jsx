@@ -155,7 +155,7 @@ var Movie = React.createClass({
     }
     var query = params.join('&');
     PlayerWindow.loadURL('file://' + __dirname + '/player.html?' + query);
-    //PlayerWindow.webContents.openDevTools();
+    PlayerWindow.webContents.openDevTools();
     PlayerWindow.webContents.on('did-finish-load', function() {
       PlayerWindow.webContents.send('setMovie', movie);
     });
