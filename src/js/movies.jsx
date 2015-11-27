@@ -1,29 +1,59 @@
 var superagent = require('superagent');
 var OS = require('opensubtitles-api');
 var MovieDB = require('moviedb')('22a47483fdde69c188979a6d2213c84b');
+var eztvapi = require('eztvapi');
 
-const config = require('../config.js')
+const config = require('../config.js');
 const electron = require('electron');
 const remote = electron.remote;
 const BrowserWindow = remote.BrowserWindow;
 
 const Loading = require('../build/js/Loading');
+const Toolbar = require('../build/js/Toolbar');
 const MoviesList = require('../build/js/MoviesList');
+const ShowsList = require('../build/js/ShowsList');
+const Show = require('../build/js/Show');
 
 var PopcornTime = React.createClass({
   getInitialState: function() {
     return {
+      active: 'movies',
       selected: null,
       movies: {
         list: [],
         page: 0,
         loading: false
       },
-      moviesPage: 0
+      shows: {
+        list: [],
+        page: 0,
+        loading: false
+      },
+      moviesPage: 0,
+      showsPage: 0
     };
   },
   componentDidMount: function() {
     this.loadMoreMovies();
+    this.loadMoreShows();
+  },
+  loadMoreShows: function() {
+    var shows = this.state.shows;
+    shows.loading = true;
+    this.setState({shows: shows});
+    var page = this.state.shows.page + 1;
+
+    var eztv = eztvapi({
+      apiUrl: 'https://www.popcorntime.ws/api/eztv/',
+      apiLimitRequests: 10,    // 10 requests
+      apiLimitInterval: 60000  // per minute
+    });
+
+    eztv.getShows(page, function (err, shows) {
+      if (err) { return console.log('No such page or something went wrong'); }
+      var shows = {list: this.state.shows.list.concat(shows), page: page, loading: false};
+      this.setState({shows: shows});
+    }.bind(this));
   },
   loadMoreMovies: function() {
     var movies = this.state.movies;
@@ -45,36 +75,52 @@ var PopcornTime = React.createClass({
         }
       }.bind(this));
   },
+  selectShow: function(index) {
+    this.setState({selected: index});
+
+    var show = this.state.shows.list[index];
+    if (!show.plot) {
+      this.loadShowPlot(index);
+    }
+  },
   selectMovie: function(index) {
-    this.resizeWindow(config.film_window.w, config.film_window.h);
     this.setState({selected: index});
 
     var movie = this.state.movies.list[index];
     if (!movie.plot) {
-      this.loadPlot(index);
+      this.loadMoviePlot(index);
     }
     if (!movie.subtitles) {
       this.loadSubtitles(index);
     }
   },
   unselectMovie: function() {
-    this.resizeWindow(config.main_window.w, config.main_window.h);
     this.setState({selected: null});
   },
-  resizeWindow: function(w, h) {
-    window.resizeTo(w, h);
-  },
-  loadPlot: function(index) {
+  loadMoviePlot: function(index) {
     var movies = this.state.movies;
     var movie = movies.list[index];
 
     MovieDB.movieInfo({id: movie.imdb_code }, function(err, res){
       if (res) {
         movie.plot = res.overview;
-        movie.backdrop_image = 'https://image.tmdb.org/t/p/original/' + res.backdrop_path;
+        movie.backdrop_image = 'https://image.tmdb.org/t/p/w780/' + res.backdrop_path;
         movies.list[index] = movie;
         this.setState({movies: movies});
       }
+    }.bind(this));
+  },
+  loadShowPlot: function(index) {
+    var shows = this.state.shows;
+    var show = shows.list[index];
+
+    MovieDB.find({id: show.imdb_id, external_source: 'imdb_id'}, function(err, res){
+      if (res) {
+        var res = res.tv_results[0];
+        show.plot = res.overview;
+        show.backdrop_image = 'https://image.tmdb.org/t/p/w780/' + res.backdrop_path;
+        shows.list[index] = show;
+        this.setState({shows: shows});
     }.bind(this));
   },
   loadSubtitles: function(index) {
@@ -95,29 +141,59 @@ var PopcornTime = React.createClass({
       this.setState({movies: movies});
     }.bind(this));
   },
+  changeActive: function(active) {
+    this.setState({active: active});
+  },
   render: function() {
     var Content;
-    if (!this.state.movies.list.length) {
-      Content = <div><Loading /></div>;
-    } else {
-      if (this.state.selected) {
+
+    if (this.state.selected) {
+      if (this.state.active == 'movies') {
         var movie = this.state.movies.list[this.state.selected];
         Content = <Movie movie={movie} unselectMovie={this.unselectMovie} />;
       } else {
-        Content = (
-          <div>
-
-            <div className="toolbar">
-              <div className="item movies active"></div>
-              <div className="item series"></div>
-
-              <div className="item search"></div>
-            </div>
-
-            <MoviesList movies={this.state.movies.list} selectMovie={this.selectMovie} loadMoreMovies={this.loadMoreMovies} loadingMore={this.state.movies.loading} />
-          </div>
-        );
+        var show = this.state.shows.list[this.state.selected];
+        Content = <Show show={show} unselectMovie={this.unselectMovie} />;
       }
+    } else {
+      var List;
+
+      if (this.state.active == 'movies') {
+        //Movies
+        if (!this.state.movies.list.length) {
+          List = (
+            <div className="loadingContainer">
+              <Loading />
+              <p>Looking for movies...</p>
+            </div>
+          );
+        } else {
+          List = <MoviesList movies={this.state.movies.list} selectMovie={this.selectMovie} loadMoreMovies={this.loadMoreMovies} loadingMore={this.state.movies.loading} />;
+        }
+      } else {
+        //Series
+        if (!this.state.shows.list.length) {
+          List = (
+            <div className="loadingContainer">
+              <Loading />
+              <p>Looking for tv shows...</p>
+            </div>
+          );
+        } else {
+          List = <ShowsList shows={this.state.shows.list} selectShow={this.selectShow} loadMoreShows={this.loadMoreShows} loadingMore={this.state.shows.loading} />;
+        }
+      }
+
+      Content = (
+        <div>
+
+          <Toolbar active={this.state.active} changeActive={this.changeActive} />
+
+          <div className="listContainer">
+            {List}
+          </div>
+        </div>
+      );
     }
     return (
       <div>{Content}</div>
@@ -126,6 +202,9 @@ var PopcornTime = React.createClass({
 });
 
 var Movie = React.createClass({
+  componentWillMount: function() {
+    window.resizeTo(config.film_window.w, config.film_window.h);
+  },
   getInitialState: function() {
     return {
       scene: 'main',
@@ -220,7 +299,7 @@ var Movie = React.createClass({
         </div>
         <div className="content">
           <div className="main">
-            <img className="cover" src={movie.backdrop_image}/>
+            <img className="cover" src={movie.backdrop_image} width="350" height="197" />
             <h1 className="title">{movie.title}</h1>
             <div className="play" onClick={this.playMovie}></div>
           </div>

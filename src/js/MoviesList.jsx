@@ -1,4 +1,9 @@
+const config = require('../../config.js')
+
 var MoviesList = React.createClass({
+  componentWillMount: function() {
+    window.resizeTo(config.main_window.w, config.main_window.h)
+  },
   componentDidMount: function() {
     var moviesList = this.refs.moviesList;
     moviesList.addEventListener('scroll', this.handleScroll);

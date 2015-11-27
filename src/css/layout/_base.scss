@@ -39,7 +39,8 @@ a {
 
 .scrollable::-webkit-scrollbar
 {
-	width: 12px;
+	width: 6px;
+  height: 6px;
 }
 
 .scrollable::-webkit-scrollbar-thumb

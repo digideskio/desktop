@@ -32,7 +32,7 @@ app.on('ready', function() {
     autoHideMenuBar: true
   });
   MainWindow.loadURL('file://' + __dirname + '/views/main.html');
-  //MainWindow.webContents.openDevTools();
+  MainWindow.webContents.openDevTools();
   //Hide the main window when blured
   MainWindow.on('blur', function() {
     this.hide();

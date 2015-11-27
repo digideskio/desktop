@@ -1,15 +1,26 @@
+.loadingContainer {
+	text-align: center;
+	color: #888;
+	font-size: 12px;
+
+	.spinner {
+		margin-top: 40px;
+		width: inherit !important;
+	}
+}
+
 .list {
 	@include size(100% auto);
 	@include display(flex);
 	@include flex-direction(row);
 	@include justify-content(space-between);
-	padding: 1.5em 0.5em;
+	padding: 1em 0.5em;
 	background: $almost-black;
 	overflow-x: scroll;
 
 	.item {
-		@include flex(1 0 150px);
-		min-width: 150px;
+		@include flex(1 0 80px);
+		min-width: 80px;
 		margin: 0 0.5em;
 		cursor: pointer;
 		opacity: 0.8;
@@ -22,7 +33,7 @@
 			display: block;
 			width: 100%;
 			margin: 0 auto;
-			border-radius: 10px;
+			border-radius: 2px;
 		}
 	}
 }

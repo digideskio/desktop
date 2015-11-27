@@ -6,23 +6,23 @@
 	@include align-items(center);
 
 	.item {
-		@include size(em(100) em(64));
-		@include flex(0 0 em(100));
+		@include size(60px 40px);
+		@include flex(0 0 60px);
 		background-size: 25%;
 		background-repeat: no-repeat;
 		background-position: center;
-		line-height: 4em;
+		line-height: 40px;
 
 		&:not(.title) {
 			opacity: .4;
-			cursor: pointer;			
+			cursor: pointer;
 		}
 
 		&.movies {
 			background-image: url('../images/icon-movie.svg');
 		}
 
-		&.series {
+		&.shows {
 			background-size: 40%;
 			background-image: url('../images/icon-tv.svg');
 		}
