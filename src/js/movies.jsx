@@ -121,6 +121,7 @@ var PopcornTime = React.createClass({
         show.backdrop_image = 'https://image.tmdb.org/t/p/w780/' + res.backdrop_path;
         shows.list[index] = show;
         this.setState({shows: shows});
+      }
     }.bind(this));
   },
   loadSubtitles: function(index) {
